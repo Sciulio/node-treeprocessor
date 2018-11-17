@@ -381,11 +381,11 @@ function iterateContextSet(err) {
 
 // #region execution
 
-module.exports = function treeprocess(_source_path, _output_path) {
+module.exports = function treeprocess(_source_path, _output_path, _config_path) {
   source_path = _source_path;
   output_path = _output_path;
+  config_path = _config_path;
   
-  config_path = path.join(__dirname, 'config');
   config_file_name = 'build-config.';
   config_file_ext = 'json';
   config_file = config_file_name + config_file_ext;

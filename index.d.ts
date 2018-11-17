@@ -1,1 +1,1 @@
-export declare function treeprocess(source_path: string, output_path: string): void;
+export declare function treeprocess(source_path: string, output_path: string, _config_path: string): void;
