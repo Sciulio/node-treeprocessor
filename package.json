@@ -1,0 +1,29 @@
+{
+  "name": "node-treeprocessor",
+  "version": "1.0.0",
+  "description": "Tree preprocessor for any text-type file with (almost) any output files structure.",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "repository": "github:Sciulio/node-preprocessor",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "preprocessor"
+  ],
+  "author": "Sciulio <sciulio@msn.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "colors": "^1.3.2",
+    "lodash": "^4.17.11"
+  },
+  "dependencies": {
+    "clean-css": "^4.2.1",
+    "glob": "^7.1.3",
+    "html-minifier": "^3.5.21",
+    "mkpath": "^1.0.0",
+    "node-preprocessor": "^1.0.0",
+    "recursive-copy": "^2.0.9",
+    "uglify-js": "^3.4.9"
+  }
+}

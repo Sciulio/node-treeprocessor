@@ -1,0 +1,1 @@
+export declare function treeprocess(source_path: string, output_path: string): void;
