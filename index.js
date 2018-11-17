@@ -381,7 +381,7 @@ function iterateContextSet(err) {
 
 // #region execution
 
-export default function treeprocess(_source_path, _output_path) {
+module.exports = function treeprocess(_source_path, _output_path) {
   source_path = _source_path;
   output_path = _output_path;
   
