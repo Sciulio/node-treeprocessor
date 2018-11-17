@@ -4,7 +4,7 @@
   "description": "Tree preprocessor for any text-type file with (almost) any output files structure.",
   "main": "index.js",
   "types": "index.d.ts",
-  "repository": "github:Sciulio/node-preprocessor",
+  "repository": "github:Sciulio/node-treenpmprocessor",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
