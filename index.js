@@ -380,18 +380,19 @@ function iterateContextSet(err) {
 
 
 // #region execution
+let envContextSet;
 
 module.exports = function treeprocess(_source_path, _output_path, _config_path) {
   source_path = _source_path;
   output_path = _output_path;
   config_path = _config_path;
-  
+
   config_file_name = 'build-config.';
   config_file_ext = 'json';
   config_file = config_file_name + config_file_ext;
 
   console.log(colors.info("Start executing!"));
-  const envContextSet = loadContextesSet();
+  envContextSet = loadContextesSet();
 
   console.log(colors.info("  - environments:"), envContextSet.map(item => item.key));
   iterateContextSet();
