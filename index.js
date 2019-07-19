@@ -18,6 +18,9 @@ const glob = require("glob");
 
 // #region config
 
+let verbose_console = false;
+let verbose_html = true;
+
 /* const source_path = 'src/templates';
 const output_path = "output";
 
@@ -28,11 +31,6 @@ const config_file = config_file_name + config_file_ext; */
 let source_path, output_path;
 
 let config_path, config_file_name, config_file_ext, config_file;
-
-// TODO: configurable
-const _logDebug = console.log.bind(console);
-const _logInfo = console.info.bind(console);
-const _logError = console.error.bind(console);
 
 
 // set theme
@@ -54,11 +52,53 @@ colors.setTheme({
 
 // #region helpers
 
-function logAction(title, source, target, params) {
-  _logInfo(colors.input("- " + title + "\t"));
-  source && _logInfo(colors.verbose("   source:\t\t"), source);
-  target && _logInfo(colors.verbose("   target:\t\t"), target);
-  params && _logInfo(colors.verbose("   params:"), JSON.stringify(params, null, 12));
+let htmlResults;
+
+// TODO: configurable
+const _logInfo = console.info.bind(console);
+const _logError = function(title, error) {
+  console.error(colors.error(title));
+  console.error(colors.error(error));
+
+  verbose_html && htmlResults.push(`
+<hr/>
+<h4 style="color:red">Error: ${title}<h4>
+<p style="color:red">
+  <pre>${JSON.stringify(error)}</pre>
+</p>
+  `);
+}
+
+function _logTitle(title, ...args) {
+  verbose_console && console.log(colors.info(title), ...args);
+
+  verbose_html && htmlResults.push(`
+<hr/>
+<h4>${title}<h4>
+<ul>
+  ${args.map(arg => `<li>${typeof arg === 'object' ? `<pre>${JSON.stringify(arg)}</pre>` : arg}</li>`)}
+</ul>
+  `);
+}
+
+function _logAction(title, source, target, params) {
+  if (verbose_console) {
+    _logInfo(colors.input("- " + (Array.isArray(title) ? title.join(' ') : title) + "\t"));
+    source && _logInfo(colors.verbose("   source:\t\t"), source);
+    target && _logInfo(colors.verbose("   target:\t\t"), target);
+    params && _logInfo(colors.verbose("   params:"), JSON.stringify(params, null, 12));
+  }
+
+  verbose_html && htmlResults.push(`
+<fieldset>
+  <legend>${Array.isArray(title) ? `${title.shift()} <small>${title.join(' ')}</small>` : title}</legend>
+  <table>
+  ${source ? `<tr><td><i>source</i></td><td>${source}</td></tr>` : ''}
+  ${target ? `<tr><td><i>target</i></td><td>${target}</td></tr>` : ''}
+  ${params ? `<tr><td><i>params</i></td><td><pre>${JSON.stringify(params, null, 2)}</pre></td></tr>` : ''}
+  </table>
+</fieldset>
+  `);
 }
 
 // #endregion
@@ -171,7 +211,7 @@ const postProcess = (function() {
         return;
       }
 
-      logAction("Postprocessing", fileArgs.paths.fileToFull);
+      _logAction("Postprocessing", fileArgs.paths.fileToFull);
 
       const minified = _postProcessCmdFunc(fileArgs.code, _postProcessCmdConfig);
 
@@ -195,10 +235,10 @@ const postProcess = (function() {
 
 const cmdSet = {
   "PREPROCESS": function (fileArgs, next) {
-    logAction("Reading", fileArgs.paths.fileFromFull, fileArgs.paths.fileToFull);
+    _logAction("Reading", fileArgs.paths.fileFromFull, fileArgs.paths.fileToFull);
   
     fs.readFile(fileArgs.paths.fileFromFull, (err, data) => {
-      logAction("Compiling", fileArgs.paths.fileFromFull, fileArgs.paths.fileToFull, fileArgs.params);
+      _logAction("Compiling", fileArgs.paths.fileFromFull, fileArgs.paths.fileToFull, fileArgs.params);
   
       const text = data.toString();
       const preprocessedCode = nodePreprocessor.preprocess(text, fileArgs.params);
@@ -214,11 +254,11 @@ const cmdSet = {
     mkpath.sync(fileArgs.paths.fileToPath);
     
     if (fileArgs.code) {
-      logAction("Persisting", fileArgs.paths.fileFromFull, fileArgs.paths.fileToFull);
+      _logAction("Persisting", fileArgs.paths.fileFromFull, fileArgs.paths.fileToFull);
 
       fs.writeFile(fileArgs.paths.fileToFull, fileArgs.code, next);
     } else {
-      logAction("Copying", fileArgs.paths.fileFromFull, fileArgs.paths.fileToFull);
+      _logAction("Copying", fileArgs.paths.fileFromFull, fileArgs.paths.fileToFull);
 
       if (fileArgs.paths.isFolder) {
         var rCopy = require('recursive-copy');
@@ -286,7 +326,7 @@ function iterateContextItem(fileArgs, next) {
   }
 
   const execCmd = fileArgs.execCmdList.shift();
-  logAction("Iterate '" + execCmd + "' file item", fileArgs.paths.fileFromFull, fileArgs.paths.fileToFull);
+  _logAction(["Iterate", execCmd, "file item"], fileArgs.paths.fileFromFull, fileArgs.paths.fileToFull);
   
   if (execCmd in cmdSet) {
     cmdSet[execCmd](fileArgs, (err) => err ? next(err) : iterateContextItem(fileArgs, next));
@@ -352,14 +392,13 @@ function globEnvContextItem(envItemKey, envContext) {
 
 function iterateContextSet(err) {
   if (err) {
-    _logError("Erroro!");
-    _logError(colors.error(err));
+    _logError("iterateContextSet", err);
     return;
   }
 
   const envContext = envContextSet.shift();
   if (envContext) {
-    _logInfo(colors.info("Compiling Environment:"), envContext.key);
+    _logTitle("Compiling Environment:", envContext.key);
     
     Object.keys(envContext.value)
     .forEach(envItemKey => {
@@ -382,10 +421,18 @@ function iterateContextSet(err) {
 // #region execution
 let envContextSet;
 
-module.exports = function treeprocess(_source_path, _output_path, _config_path) {
+module.exports = function treeprocess(
+  _source_path, _output_path, _config_path,
+  _verbose_console = true, _verbose_html = false
+) {
   source_path = _source_path;
   output_path = _output_path;
   config_path = _config_path;
+  
+  verbose_console = _verbose_console;
+  verbose_html = _verbose_html;
+
+  htmlResults = [];
 
   config_file_name = 'build-config.';
   config_file_ext = 'json';
@@ -394,9 +441,28 @@ module.exports = function treeprocess(_source_path, _output_path, _config_path) 
   console.log(colors.info("Start executing!"));
   envContextSet = loadContextesSet();
 
-  console.log(colors.info("  - environments:"), envContextSet.map(item => item.key));
+  _logTitle("Environments:", envContextSet.map(item => item.key));
   iterateContextSet();
 };
+
+//so the program will not close instantly
+//process.stdin.resume();
+// TODO: if verbose_html
+process.on('exit', function() {
+  verbose_html && htmlResults.length && fs.writeFileSync(
+    path.join(process.cwd(), typeof verbose_html === 'string' ? verbose_html : 'htmlResults.html'), `
+<style>
+  fieldset table tr {
+    vertical-align: top;
+  }
+
+  fieldset table tr td pre {
+    color: #444;
+  }
+</style>` +
+    htmlResults.join('')
+  );
+});
 
 // #endregion
 
